@@ -77,7 +77,7 @@ public class ProbedHashTable<K, V> implements HashTable<K, V> {
    * The offset to use in linear probes. (We choose a prime because that helps
    * ensure that we cover all of the spaces.)
    */
-  static final int PROBE_OFFSET = 17;
+  static final int PROBE_OFFSET = 18;
 
   // +--------+----------------------------------------------------------
   // | Fields |
@@ -85,7 +85,7 @@ public class ProbedHashTable<K, V> implements HashTable<K, V> {
 
   /**
    * The number of values currently stored in the hash table. We use this to
-   * determine when to expand the hash table.
+   * determine when to expancan choose a different offset after we cycle back to the beginning. In this case, an offset of 1 is reasonable, because it helps ensure that we check every cell in the table.d the hash table.
    */
   int size = 0;
 
@@ -149,7 +149,6 @@ public class ProbedHashTable<K, V> implements HashTable<K, V> {
    */
   @Override
   public boolean containsKey(K key) {
-    // STUB/HACK
     try {
       get(key);
       return true;
@@ -186,7 +185,7 @@ public class ProbedHashTable<K, V> implements HashTable<K, V> {
     int index = find(key);
     @SuppressWarnings("unchecked")
     Pair<K, V> pair = (Pair<K, V>) pairs[index];
-    if (pair == null) {
+    if (pair == null || !pair.key().equals(key)) {
       if (REPORT_BASIC_CALLS && (reporter != null)) {
         reporter.report("get(" + key + ") failed");
       } // if reporter != null
@@ -219,9 +218,12 @@ public class ProbedHashTable<K, V> implements HashTable<K, V> {
    *   The corresponding value.
    */
   @Override
+  @SuppressWarnings("unchecked")
   public V remove(K key) {
-    // STUB
-    return null;
+    int index = find(key);
+    V value = ((Pair<K, V>)this.pairs[index]).value();
+    this.pairs[index] = null;
+    return value;
   } // remove(K)
 
   /**
@@ -246,13 +248,14 @@ public class ProbedHashTable<K, V> implements HashTable<K, V> {
     if (this.pairs[index] != null) {
       result = ((Pair<K, V>) this.pairs[index]).value();
     } // if
+    if (!containsKey(key)) {
+      ++this.size;
+    }
     this.pairs[index] = new Pair<K, V>(key, value);
     // Report activity, if appropriate
     if (REPORT_BASIC_CALLS && (reporter != null)) {
       reporter.report("pairs[" + index + "] = " + key + ":" + value);
     } // if reporter != null
-    // Note that we've incremented the size.
-    ++this.size;
     // And we're done
     return result;
   } // set(K, V)
@@ -360,15 +363,20 @@ public class ProbedHashTable<K, V> implements HashTable<K, V> {
    */
   void expand() {
     // Figure out the size of the new table.
+    int oldSize = this.pairs.length;
     int newSize = 2 * this.pairs.length + rand.nextInt(10);
     if (REPORT_BASIC_CALLS && (reporter != null)) {
       reporter.report("Expanding to " + newSize + " elements.");
     } // if reporter != null
     // Create a new table of that size.
     Object[] newPairs = new Object[newSize];
+
     // Move all pairs from the old table to their appropriate
     // location in the new table.
-    // STUB
+    for (int i = 0; i <oldSize; i++) {
+      newPairs[i] = this.pairs[i];
+    } // for
+    this.pairs = newPairs;
     // And update our pairs
   } // expand()
 
@@ -381,9 +389,16 @@ public class ProbedHashTable<K, V> implements HashTable<K, V> {
    *
    * @return the aforementioned index.
    */
+  @SuppressWarnings("unchecked")
   int find(K key) {
-    return Math.abs(key.hashCode()) % this.pairs.length;
+    int guess = Math.abs(key.hashCode()) % this.pairs.length;
+    while (
+      this.pairs[guess] != null 
+      && !key.equals(((Pair<K, V>) this.pairs[guess]).key())
+    ) {
+      guess = (guess + PROBE_OFFSET) % this.pairs.length;
+    }
+    return guess;
   } // find(K)
-
 } // class ProbedHashTable<K, V>
 

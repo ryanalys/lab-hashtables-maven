@@ -39,13 +39,13 @@ public class ChainedHashTableExperiments {
         new ChainedHashTable<String, String>(rept);
 
     // Most of the time, we don't care about the basic calls
-    htab.reportBasicCalls(false);
+    //htab.reportBasicCalls(false);
 
     // Conduct some of the experiments
     // HashTableExperiments.matchingKeysExpt(pen, htab);
     // HashTableExperiments.repeatedSetExpt(pen, htab);
     // HashTableExperiments.matchingSetExpt(pen, htab);
-    // HashTableExperiments.multipleSetExpt(pen, htab);
+    HashTableExperiments.multipleSetExpt(pen, htab);
     // HashTableExperiments.removeExpt(pen, htab);
   } // main(String[])
 

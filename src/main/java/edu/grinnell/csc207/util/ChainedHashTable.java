@@ -170,8 +170,7 @@ public class ChainedHashTable<K, V> implements HashTable<K, V> {
   /**
    * Get the value for a particular key.
    *
-   * @param key
-   *   The key to search for.
+   * @param keythis for.
    *
    * @return the corresponding value.
    *
@@ -183,13 +182,14 @@ public class ChainedHashTable<K, V> implements HashTable<K, V> {
     int index = find(key);
     @SuppressWarnings("unchecked")
     ArrayList<Pair<K, V>> alist = (ArrayList<Pair<K, V>>) buckets[index];
-    if (alist == null) {
+    int inBucketIndex = this.bucketIndexOf(alist, key);
+    if (inBucketIndex == -1) {
       if (REPORT_BASIC_CALLS && (reporter != null)) {
         reporter.report("get(" + key + ") failed");
       } // if reporter != null
       throw new IndexOutOfBoundsException("Invalid key: " + key);
     } else {
-      Pair<K, V> pair = alist.get(0);
+      Pair<K, V> pair = alist.get(inBucketIndex);
       if (REPORT_BASIC_CALLS && (reporter != null)) {
         reporter.report("get(" + key + ") => " + pair.value());
       } // if reporter != null
@@ -364,7 +364,16 @@ public class ChainedHashTable<K, V> implements HashTable<K, V> {
     if (REPORT_BASIC_CALLS && (reporter != null)) {
       reporter.report("Expanding to " + newSize + " elements.");
     } // if reporter != null
-    // STUB
+    // Remember the old table
+    Object[] oldBuckets = this.buckets;
+    // Create a new table of that size.
+    this.buckets = new Object[newSize];
+    // Move all buckets from the old table to their appropriate
+    // location in the new table.
+    for (int i = 0; i < oldBuckets.length; i++) {
+      this.buckets[i] = oldBuckets[i];
+    } // for
+
   } // expand()
 
   /**
@@ -380,5 +389,16 @@ public class ChainedHashTable<K, V> implements HashTable<K, V> {
     return Math.abs(key.hashCode()) % this.buckets.length;
   } // find(K)
 
+  int bucketIndexOf(ArrayList<Pair<K, V>> bucket, K key) {
+    if (bucket == null) {
+      return -1;
+    }
+    for (int i = 0; i < bucket.size(); i++) {
+      if (bucket.get(i).key().equals(key)) {
+        return i;
+      }
+    }
+    return -1;
+  }
 } // class ChainedHashTable<K, V>
 
